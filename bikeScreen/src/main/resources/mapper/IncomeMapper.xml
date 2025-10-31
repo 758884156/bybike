@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.longyi.bikescreen.mapper.IncomeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.longyi.bikescreen.entity.Income">
+        <id column="id" property="id" />
+        <result column="user" property="user" />
+        <result column="bike" property="bike" />
+        <result column="bikeorder" property="bikeorder" />
+        <result column="money" property="money" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, user, bike, bikeorder, money, create_time
+    </sql>
+    <select id="moneyByUser" resultType="java.lang.Integer">
+        select sum(income.money) from income
+        <if test="user!=0">
+            where user=#{user}
+        </if>
+    </select>
+    <select id="PageList" resultType="com.longyi.bikescreen.entity.Income">
+        select  * from income ${ew.customSqlSegment}
+    </select>
+    <select id="weekMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select  CASE GROUP_CONCAT(WEEKDAY(create_time))
+        WHEN 0 THEN '星期一'
+        WHEN 1 THEN '星期二'
+        WHEN 2 THEN '星期三'
+        WHEN 3 THEN '星期四'
+        WHEN 4 THEN '星期五'
+        WHEN 5 THEN '星期六'
+        WHEN 6 THEN '星期日'
+        END AS name,
+        sum(income.money) as value
+        from income
+        WHERE create_time>=DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        <if test="bike!=0">
+            and bike=#{bike}
+        </if>
+        group by WEEKDAY(create_time)
+        order by WEEKDAY(create_time) asc
+    </select>
+    <select id="monthMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select DATE_FORMAT(create_time,'%m-%d')
+        AS name,
+        sum(income.money) as value
+        from income
+        WHERE create_time>= DATE_FORMAT(create_time,'%m-%d-01')
+        <if test="bike!=0">
+            and bike=#{bike}
+        </if>
+
+        group by DATE_FORMAT(create_time,'%m-%d')
+        order by DATE_FORMAT(create_time,'%m-%d') asc
+    </select>
+    <select id="yearMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select MONTH(create_time)
+        AS name,
+        sum(income.money) as value
+        from income
+        WHERE YEAR(create_time)=YEAR(CURDATE())
+        <if test="bike!=0">
+            and bike=#{bike}
+        </if>
+
+        group by MONTH(create_time)
+        order by MONTH(create_time) asc
+    </select>
+    <select id="allMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select YEAR(create_time)
+        AS name,
+        sum(income.money) as value
+        from income
+        <where>
+            <if test="bike!=0">
+                and bike=#{bike}
+            </if>
+
+        </where>
+
+        group by YEAR(create_time)
+        order by YEAR(create_time) asc
+    </select>
+    <select id="bikeIncome" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select bike.name, sum(income.money) as value
+        from income join bike on income.bike=bike.id group by bike.name
+    </select>
+    <select id="bikeIncomeCount" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT bike.name, count(*) AS value
+        FROM income
+            JOIN bike  ON income.bike = bike.id
+        GROUP BY bike.name
+        order by value desc
+
+    </select>
+</mapper>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.longyi.bikescreen.mapper.RecoveryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.longyi.bikescreen.entity.Recovery">
+        <id column="id" property="id" />
+        <result column="bike" property="bike" />
+        <result column="count" property="count" />
+        <result column="create_time" property="createTime" />
+        <result column="address" property="address" />
+        <result column="province" property="province" />
+        <result column="city" property="city" />
+        <result column="lon" property="lon" />
+        <result column="lat" property="lat" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, bike, count, create_time, address, province, city, lon, lat
+    </sql>
+    <select id="PageList" resultType="com.longyi.bikescreen.entity.Recovery">
+        select  * from recovery ${ew.customSqlSegment}
+    </select>
+    <select id="bikeRecovery" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select bike.name,sum(recovery.count) as value from recovery inner join bike
+        on recovery.bike=bike.id
+        <where>
+            <if test="province!='全部'">
+                and recovery.province like concat('%',#{province},'%')
+            </if>
+        </where>
+        group by bike.name
+    </select>
+</mapper>

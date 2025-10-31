@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.longyi.bikescreen.mapper.BikeorderMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.longyi.bikescreen.entity.Bikeorder">
+        <id column="id" property="id" />
+        <result column="order_code" property="orderCode" />
+        <result column="user" property="user" />
+        <result column="bike" property="bike" />
+        <result column="create_time" property="createTime" />
+        <result column="money" property="money" />
+        <result column="status" property="status" />
+        <result column="finish_time" property="finishTime" />
+        <result column="use_time" property="useTime" />
+        <result column="pay_time" property="payTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, order_code, user, bike, create_time, money, status, finish_time, use_time, pay_time
+    </sql>
+    <select id="moneyByUser" resultType="java.lang.Integer">
+        select sum(bikeorder.money) from bikeorder where status!=0
+        <if test="user!=0">
+            AND user=#{user}
+        </if>
+    </select>
+    <select id="PageList" resultType="com.longyi.bikescreen.entity.Bikeorder">
+        select *
+        from bikeorder ${ew.customSqlSegment}
+    </select>
+    <select id="bikeUser" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select bike.name, count(DISTINCT bikeorder.user) as value
+        from bikeorder join bike on bikeorder.bike=bike.id group by bike.name
+
+    </select>
+    <select id="bikeOrder" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select bike.name, sum(bikeorder.money) as value
+        from bikeorder join bike on bikeorder.bike=bike.id group by bike.name
+    </select>
+    <select id="weekMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+
+        select  CASE GROUP_CONCAT(WEEKDAY(finish_time))
+        WHEN 0 THEN '星期一'
+        WHEN 1 THEN '星期二'
+        WHEN 2 THEN '星期三'
+        WHEN 3 THEN '星期四'
+        WHEN 4 THEN '星期五'
+        WHEN 5 THEN '星期六'
+        WHEN 6 THEN '星期日'
+        END AS name,
+        sum(bikeorder.money) as value
+        from bikeorder
+        WHERE finish_time>=DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        <if test="bike!=0">
+            and bike=#{bike}
+        </if>
+        and status!=0
+        group by WEEKDAY(finish_time)
+        order by WEEKDAY(finish_time) ASC
+    </select>
+    <select id="monthMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select DATE_FORMAT(finish_time,'%m-%d')
+        AS name,
+        sum(bikeorder.money) as value
+        from bikeorder
+        WHERE finish_time>= DATE_FORMAT(finish_time,'%m-%d-01')
+        <if test="bike!=0">
+            and bike=#{bike}
+        </if>
+        and status!=0
+        group by DATE_FORMAT(finish_time,'%m-%d')
+        order by DATE_FORMAT(finish_time,'%m-%d') asc
+    </select>
+    <select id="yearMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select MONTH(finish_time)
+        AS name,
+        sum(bikeorder.money) as value
+        from bikeorder
+        WHERE YEAR(finish_time)=YEAR(CURDATE())
+        <if test="bike!=0">
+            and bike=#{bike}
+        </if>
+        and status!=0
+        group by MONTH(finish_time)
+        order by MONTH(finish_time) asc
+    </select>
+    <select id="allMoney" resultType="com.longyi.bikescreen.entity.ChartPie">
+        select YEAR(finish_time)
+        AS name,
+        sum(bikeorder.money) as value
+        from bikeorder
+        <where>
+            <if test="bike!=0">
+                and bike=#{bike}
+            </if>
+            and status!=0
+        </where>
+
+        group by YEAR(finish_time)
+        order by YEAR(finish_time) asc
+    </select>
+    <select id="weekCount" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT
+        CASE GROUP_CONCAT(WEEKDAY(create_time))
+        WHEN 0 THEN '星期一'
+        WHEN 1 THEN '星期二'
+        WHEN 2 THEN '星期三'
+        WHEN 3 THEN '星期四'
+        WHEN 4 THEN '星期五'
+        WHEN 5 THEN '星期六'
+        WHEN 6 THEN '星期日'
+        END AS name,
+        count(*) AS value
+        FROM bikeorder
+        WHERE create_time >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        <if test="bike != 0">
+            AND bike = #{bike}
+        </if>
+
+        GROUP BY WEEKDAY(create_time)
+        ORDER BY WEEKDAY(create_time) ASC
+    </select>
+
+    <select id="monthCount" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT
+        DATE_FORMAT(create_time, '%m-%d') AS name,
+        count(*) AS value
+        FROM bikeorder
+        WHERE create_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01') -- 查询本月的订单
+        <if test="bike != 0">
+            AND bike = #{bike}
+        </if>
+
+        GROUP BY DATE_FORMAT(create_time, '%m-%d')
+        ORDER BY DATE_FORMAT(create_time, '%m-%d') ASC;
+    </select>
+    <select id="yearCount" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT
+        MONTH(create_time) AS name,
+        count(*) AS value
+        FROM bikeorder
+        WHERE YEAR(create_time) = YEAR(CURDATE())  -- 只查询今年的数据
+        <if test="bike != 0">
+            AND bike = #{bike}
+        </if>
+
+        GROUP BY MONTH(create_time)
+        ORDER BY MONTH(create_time) ASC
+    </select>
+    <select id="bikeOrderCount" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT bike.name, count(*) AS value
+        FROM bikeorder
+            JOIN bike  ON bikeorder.bike = bike.id
+        GROUP BY bike.name
+        order by value desc
+    </select>
+    <select id="allCount" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT
+        YEAR(create_time) AS name,  -- 返回年份格式为"XXXX年"
+        count(*) AS value
+        FROM bikeorder
+        <where>
+            <if test="bike != 0">
+                AND bike = #{bike}
+            </if>
+
+        </where>
+        GROUP BY YEAR(create_time)
+        ORDER BY YEAR(create_time) ASC
+    </select>
+</mapper>

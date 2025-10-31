@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.longyi.bikescreen.mapper.BikeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.longyi.bikescreen.entity.Bike">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="platform" property="platform" />
+        <result column="first_price" property="firstPrice" />
+        <result column="first_distance" property="firstDistance" />
+        <result column="price" property="price" />
+        <result column="image" property="image" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="remark" property="remark" />
+        <result column="count" property="count" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, name, platform, first_price, first_distance, price, image, create_time, update_time, remark, count
+    </sql>
+    <select id="PageList" resultType="com.longyi.bikescreen.entity.Bike">
+        select  * from bike ${ew.customSqlSegment}
+    </select>
+    <select id="biketype" resultType="com.longyi.bikescreen.entity.ChartPie">
+        SELECT platform.name, SUM(bike.count) AS value
+        FROM bike
+            INNER JOIN platform ON bike.platform = platform.id
+        GROUP BY platform.name
+        order by value desc
+            limit 6
+    </select>
+</mapper>
